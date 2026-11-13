@@ -3,32 +3,36 @@ package deltatwoforce.mcemu;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
 import deltatwoforce.mcemu.minecraft.CartridgeItem;
 import deltatwoforce.mcemu.minecraft.ConsoleBlock;
 import deltatwoforce.mcemu.minecraft.TelevisionBlock;
 import deltatwoforce.mcemu.minecraft.TelevisionEntity;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
+import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
-import net.fabricmc.fabric.impl.itemgroup.FabricItemGroupBuilderImpl;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.block.Material;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.glfw.GLFW;
 
 public class MCEmuMod implements ModInitializer {
 
@@ -36,77 +40,69 @@ public class MCEmuMod implements ModInitializer {
 
 	public static Logger logger = LogManager.getLogger(MODID);
 
-	public static final KeyBinding P1NES_LEFT = new KeyBinding("NES: P1 Left", GLFW.GLFW_KEY_LEFT, "NES");
-    public static final KeyBinding P1NES_RIGHT = new KeyBinding("NES: P1 Right", GLFW.GLFW_KEY_RIGHT, "NES");
-    public static final KeyBinding P1NES_UP = new KeyBinding("NES: P1 Up", GLFW.GLFW_KEY_UP, "NES");
-    public static final KeyBinding P1NES_DOWN = new KeyBinding("NES: P1 Down", GLFW.GLFW_KEY_DOWN, "NES");
-    public static final KeyBinding P1NES_A = new KeyBinding("NES: P1 A", GLFW.GLFW_KEY_RIGHT_SHIFT, "NES");
-    public static final KeyBinding P1NES_B = new KeyBinding("NES: P1 B", GLFW.GLFW_KEY_RIGHT_CONTROL, "NES");
-    public static final KeyBinding P1NES_START = new KeyBinding("NES: P1 Start", GLFW.GLFW_KEY_ENTER, "NES");
-    public static final KeyBinding P1NES_SELECT = new KeyBinding("NES: P1 Select", GLFW.GLFW_KEY_BACKSPACE, "NES");
-    
-    public static final KeyBinding P2NES_LEFT = new KeyBinding("NES: P2 Left", GLFW.GLFW_KEY_1, "NES");
-    public static final KeyBinding P2NES_RIGHT = new KeyBinding("NES: P2 Right", GLFW.GLFW_KEY_3, "NES");
-    public static final KeyBinding P2NES_UP = new KeyBinding("NES: P2 Up", GLFW.GLFW_KEY_5, "NES");
-    public static final KeyBinding P2NES_DOWN = new KeyBinding("NES: P2 Down", GLFW.GLFW_KEY_2, "NES");
-    public static final KeyBinding P2NES_A = new KeyBinding("NES: P2 A", GLFW.GLFW_KEY_ENTER, "NES");
-    public static final KeyBinding P2NES_B = new KeyBinding("NES: P2 B", GLFW.GLFW_KEY_0, "NES");
-    public static final KeyBinding P2NES_START = new KeyBinding("NES: P2 Start", GLFW.GLFW_KEY_7, "NES");
-    public static final KeyBinding P2NES_SELECT = new KeyBinding("NES: P2 Select", GLFW.GLFW_KEY_9, "NES");
+	public static Identifier id(String path) {
+		return Identifier.fromNamespaceAndPath(MODID, path);
+	}
 
-	public static final KeyBinding[][] keyDef = {
-			{ MCEmuMod.P1NES_A, MCEmuMod.P1NES_B, MCEmuMod.P1NES_SELECT,
-					MCEmuMod.P1NES_START, MCEmuMod.P1NES_UP, MCEmuMod.P1NES_DOWN,
-					MCEmuMod.P1NES_LEFT, MCEmuMod.P1NES_RIGHT, },
-			{ MCEmuMod.P2NES_A, MCEmuMod.P2NES_B, MCEmuMod.P2NES_SELECT,
-					MCEmuMod.P2NES_START, MCEmuMod.P2NES_UP, MCEmuMod.P2NES_DOWN,
-					MCEmuMod.P2NES_LEFT, MCEmuMod.P2NES_RIGHT, } };
-    
-    public static final ConsoleBlock consoleBlock = new ConsoleBlock(FabricBlockSettings.of(Material.METAL).nonOpaque());
-	// LESSON: w/o #nonOpaque() makes block super dark
-    public static final TelevisionBlock televisionBlock = new TelevisionBlock(FabricBlockSettings.of(Material.WOOD).nonOpaque());
+	private static ResourceKey<Block> blockKey(String path) {
+		return ResourceKey.create(Registries.BLOCK, id(path));
+	}
 
-	public static final BlockItem consoleItem = new BlockItem(consoleBlock, new FabricItemSettings());
-	public static final BlockItem televisionItem = new BlockItem(televisionBlock, new FabricItemSettings());
+	private static ResourceKey<Item> itemKey(String path) {
+		return ResourceKey.create(Registries.ITEM, id(path));
+	}
 
-	public static final ItemGroup tabNES = new FabricItemGroupBuilderImpl(new Identifier(MODID, "nes"))
-			.icon(() -> new ItemStack(Items.WHITE_STAINED_GLASS))
-			.entries((context, entries) -> {
-				entries.add(consoleItem);
-				entries.add(televisionItem);
+	// LESSON: w/o #noOcclusion() makes block super dark
+	public static final ConsoleBlock consoleBlock = new ConsoleBlock(BlockBehaviour.Properties.of()
+			.setId(blockKey("console")).mapColor(MapColor.METAL).sound(SoundType.METAL).noOcclusion());
+	public static final TelevisionBlock televisionBlock = new TelevisionBlock(BlockBehaviour.Properties.of()
+			.setId(blockKey("television")).mapColor(MapColor.WOOD).sound(SoundType.WOOD).noOcclusion());
+
+	public static final BlockItem consoleItem = new BlockItem(consoleBlock,
+			new Item.Properties().setId(itemKey("console")).useBlockDescriptionPrefix());
+	public static final BlockItem televisionItem = new BlockItem(televisionBlock,
+			new Item.Properties().setId(itemKey("television")).useBlockDescriptionPrefix());
+
+	public static final List<CartridgeItem> cartridges = new ArrayList<>();
+
+	public static final ResourceKey<CreativeModeTab> tabNESKey = ResourceKey.create(Registries.CREATIVE_MODE_TAB, id("nes"));
+
+	public static final CreativeModeTab tabNES = FabricCreativeModeTab.builder()
+			.title(Component.translatable("itemGroup.mcemu.nes"))
+			.icon(() -> new ItemStack(Items.STAINED_GLASS.white()))
+			.displayItems((context, entries) -> {
+				entries.accept(consoleItem);
+				entries.accept(televisionItem);
+				cartridges.forEach(entries::accept);
 			})
 			.build();
 
-	private static final String ENTITY_TYPE_ID = MODID + ":television_entity";
-
-	public static BlockEntityType<TelevisionEntity> televisionEntityType =
-			FabricBlockEntityTypeBuilder.create(TelevisionEntity::new, televisionBlock).build(null);
+	public static final BlockEntityType<TelevisionEntity> televisionEntityType =
+			FabricBlockEntityTypeBuilder.create(TelevisionEntity::new, televisionBlock).build();
 
 	@Override
     public void onInitialize() {
-		for (KeyBinding[] kbs : keyDef) {
-			for (KeyBinding kb : kbs) {
-				KeyBindingHelper.registerKeyBinding(kb);
-			}
-		}
+		Registry.register(BuiltInRegistries.BLOCK, blockKey("console"), consoleBlock);
+		Registry.register(BuiltInRegistries.ITEM, itemKey("console"), consoleItem);
+		Registry.register(BuiltInRegistries.BLOCK, blockKey("television"), televisionBlock);
+		Registry.register(BuiltInRegistries.ITEM, itemKey("television"), televisionItem);
 
-		Registry.register(Registries.BLOCK, new Identifier(MODID, "console"), consoleBlock);
-		Registry.register(Registries.ITEM, new Identifier(MODID, "console"), consoleItem);
-		Registry.register(Registries.BLOCK, new Identifier(MODID, "television"), televisionBlock);
-		Registry.register(Registries.ITEM, new Identifier(MODID, "television"), televisionItem);
+		Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id("television_entity"), televisionEntityType);
 
-		Registry.register(Registries.BLOCK_ENTITY_TYPE, ENTITY_TYPE_ID, televisionEntityType);
+		Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, tabNESKey, tabNES);
 
 		try {
 			Path nesroms = FabricLoader.getInstance().getConfigDir().resolve(MODID).resolve("roms/nes");
 			Files.createDirectories(nesroms);
 logger.info("loading NES roms from " + nesroms + " ...");
-			Files.list(nesroms).forEach(f -> {
-				CartridgeItem item = new CartridgeItem(new FabricItemSettings(), f);
-				ItemGroupEvents.modifyEntriesEvent(tabNES).register(entries -> entries.add(item));
-				Registry.register(Registries.ITEM, new Identifier(MODID, "cartridge"), item);
+			try (Stream<Path> files = Files.list(nesroms)) {
+				files.forEach(f -> {
+					CartridgeItem item = new CartridgeItem(new Item.Properties().setId(itemKey("cartridge")), f);
+					Registry.register(BuiltInRegistries.ITEM, itemKey("cartridge"), item);
+					cartridges.add(item);
 logger.info("loaded " + item.rom);
-			});
+				});
+			}
 		} catch (IOException e) {
 			logger.error(e);
 		}

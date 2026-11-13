@@ -4,11 +4,12 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.util.Identifier;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.Identifier;
 
+import static deltatwoforce.mcemu.MCEmuMod.id;
 import static deltatwoforce.mcemu.MCEmuMod.logger;
 
 
@@ -26,7 +27,7 @@ public class DynamicNativeImage {
     private final WritableRaster raster;
 
     private final NativeImage ni;
-    private final NativeImageBackedTexture texture;
+    private final DynamicTexture texture;
 
     private final Identifier identifier;
 
@@ -36,9 +37,9 @@ public class DynamicNativeImage {
         colorModel = image.getColorModel();
         raster = image.getRaster();
         ni = new NativeImage(NativeImage.Format.RGBA, w, h, true);
-        texture = new NativeImageBackedTexture(ni);
-        MinecraftClient client = MinecraftClient.getInstance();
-        identifier = client.getTextureManager().registerDynamicTexture("offscreen", texture);
+        identifier = id("dynamic/offscreen");
+        texture = new DynamicTexture(identifier::toString, ni);
+        Minecraft.getInstance().getTextureManager().register(identifier, texture);
         logger.info("DynamicNativeImage::<init>: " + identifier);
     }
 
@@ -61,7 +62,7 @@ public class DynamicNativeImage {
                 int blue = colorModel.getBlue(elements);
                 int out = (alpha << 24) | (blue << 16) | (green << 8) | red;
 
-                ni.setColor(x, y, out);
+                ni.setPixelABGR(x, y, out);
             }
         }
 

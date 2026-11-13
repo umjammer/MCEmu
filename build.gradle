@@ -1,9 +1,11 @@
 plugins {
-    id 'fabric-loom' version '1.0-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
 }
 
-archivesBaseName = project.archives_base_name
+base {
+    archivesName = project.archives_base_name
+}
 version = project.mod_version
 group = project.maven_group
 
@@ -18,24 +20,24 @@ repositories {
 dependencies {
     //to change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
 processResources {
-    inputs.property "version", project.version
+    def version = project.version
+    inputs.property "version", version
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version
+        expand "version": version
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
-    // Minecraft 1.18 (1.18-pre2) upwards uses Java 17.
-    it.options.release = 17
+    // Minecraft 26.1 upwards uses Java 25.
+    it.options.release = 25
 }
 
 java {
@@ -44,13 +46,16 @@ java {
     // If you remove this line, sources will not be generated.
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 jar {
+    def archivesName = base.archivesName.get()
+    inputs.property "archivesName", archivesName
+
     from("LICENSE") {
-        rename { "${it}_${base.archivesName.get()}"}
+        rename { "${it}_${archivesName}"}
     }
 }
 
@@ -61,7 +66,7 @@ assemble {
 // configure the maven publication
 publishing {
     publications {
-        mavenJava(MavenPublication) {
+        create("mavenJava", MavenPublication) {
             from components.java
         }
     }

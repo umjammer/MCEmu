@@ -7,7 +7,7 @@
 		"2": "mcemu:block/nesback",
 		"4": "mcemu:block/nesbottom",
 		"5": "mcemu:block/nestop",
-		"particle": "mcemu:blocks/nesfront"
+		"particle": "mcemu:block/nesfront"
 	},
 	"elements": [
 		{

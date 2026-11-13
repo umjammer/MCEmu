@@ -1,22 +1,21 @@
 package deltatwoforce.mcemu.minecraft;
 
 import java.nio.file.Path;
-import java.util.List;
+import java.util.function.Consumer;
 
-import net.minecraft.client.item.TooltipContext;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
-import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 
 
 public class CartridgeItem extends Item {
 	private String name;
 	public Path rom;
 
-	public CartridgeItem(Settings settings, Path rom) {
-		super(settings);
+	public CartridgeItem(Properties properties, Path rom) {
+		super(properties);
 		name = rom.getFileName().toString();
 		int i = name.lastIndexOf('.');
 		if (i > 0) {
@@ -27,8 +26,8 @@ public class CartridgeItem extends Item {
 	}
 
 	@Override
-	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-		tooltip.add(Text.of("A ROM File for the NES. " + name));
-		super.appendTooltip(stack, world, tooltip, context);
+	public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flag) {
+		tooltip.accept(Component.literal("A ROM File for the NES. " + name));
+		super.appendHoverText(stack, context, display, tooltip, flag);
 	}
 }

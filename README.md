@@ -1,6 +1,6 @@
 [![Fabric](https://img.shields.io/badge/Mod_Loader-Fabric-blue)](https://fabricmc.net/)
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.19.4-green)](https://www.minecraft.net/)
-![Java](https://img.shields.io/badge/Java-17-b07219)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.3-green)](https://www.minecraft.net/)
+![Java](https://img.shields.io/badge/Java-25-b07219)
 
 # MCEmu
 
@@ -17,7 +17,7 @@ Run emulators in Minecraft!
 
 ## Requirements
 
- * minecraft 1.19.4
+ * minecraft 26.3
  * fabricmc
  * romz
 ```shell

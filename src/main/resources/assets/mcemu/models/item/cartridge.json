@@ -1,8 +1,8 @@
 {
 	"credit": "Made with Blockbench",
 	"textures": {
-		"0": "mcemu:items/cart1",
-		"particle": "mcemu:items/cart1"
+		"0": "mcemu:item/cart1",
+		"particle": "mcemu:item/cart1"
 	},
 	"elements": [
 		{
